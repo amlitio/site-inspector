@@ -6,6 +6,7 @@ import dns.resolver
 from bs4 import BeautifulSoup
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 import os
@@ -14,30 +15,41 @@ from urllib.parse import urlparse
 
 app = FastAPI(title="Deep Inspector Pro")
 
+# Allow CORS to prevent frontend errors
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # --- Backend Analysis Logic ---
 
 def get_dns_records(domain):
-    records = {}
+    records = {'MX': [], 'NS': [], 'A': []}
     try:
-        # MX Records (Mail)
-        mx = dns.resolver.resolve(domain, 'MX')
-        records['MX'] = [str(x.exchange) for x in mx]
-    except:
-        records['MX'] = []
-    
-    try:
-        # NS Records (Nameservers)
-        ns = dns.resolver.resolve(domain, 'NS')
-        records['NS'] = [str(x.target) for x in ns]
-    except:
-        records['NS'] = []
+        # Set a timeout for DNS queries to prevent hanging
+        resolver = dns.resolver.Resolver()
+        resolver.timeout = 2
+        resolver.lifetime = 2
         
-    try:
-        # A Records (IPv4)
-        a = dns.resolver.resolve(domain, 'A')
-        records['A'] = [str(x.address) for x in a]
-    except:
-        records['A'] = []
+        try:
+            mx = resolver.resolve(domain, 'MX')
+            records['MX'] = [str(x.exchange) for x in mx]
+        except: pass
+        
+        try:
+            ns = resolver.resolve(domain, 'NS')
+            records['NS'] = [str(x.target) for x in ns]
+        except: pass
+        
+        try:
+            a = resolver.resolve(domain, 'A')
+            records['A'] = [str(x.address) for x in a]
+        except: pass
+
+    except Exception:
+        pass # Fail silently on DNS issues
         
     return records
 
@@ -54,39 +66,45 @@ def analyze_headers(headers):
     total = len(security_headers)
     
     for h in security_headers.keys():
-        if h in headers:
+        # Case insensitive check
+        if any(h.lower() == k.lower() for k in headers.keys()):
             security_headers[h] = "Present"
             score += 1
             
     return security_headers, int((score/total)*100)
 
 def analyze_logic(url: str):
+    # Normalize URL
     if not url.startswith(('http://', 'https://')):
         target_url = 'https://' + url
     else:
         target_url = url
 
-    parsed = urlparse(target_url)
-    domain = parsed.netloc
+    try:
+        parsed = urlparse(target_url)
+        domain = parsed.netloc
+        if not domain: return {"error": "Invalid URL"}
+    except:
+        return {"error": "Invalid URL format"}
 
     # Initialize results
     start_time = time.time()
     
+    # 1. HTTP Request (with timeout to prevent freezing)
     try:
-        # 1. HTTP Request & Headers
         response = requests.get(target_url, timeout=5, headers={'User-Agent': 'DeepInspector/1.0'})
-        ttfb = round((time.time() - start_time) * 1000, 2) # in ms
+        ttfb = round((time.time() - start_time) * 1000, 2)
         status_code = response.status_code
         headers = response.headers
         sec_headers, sec_score = analyze_headers(headers)
         
-        # 2. HTML Parsing (SEO & Socials)
+        # HTML Parsing
         soup = BeautifulSoup(response.text, 'html.parser')
         title = soup.title.string if soup.title else "No Title"
         meta_desc = soup.find('meta', attrs={'name': 'description'})
         description = meta_desc['content'] if meta_desc else "No Description"
         
-        # Find Social Links
+        # Social Links
         socials = []
         for link in soup.find_all('a', href=True):
             href = link['href'].lower()
@@ -94,27 +112,27 @@ def analyze_logic(url: str):
                 if href not in socials:
                     socials.append(link['href'])
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": f"Could not connect: {str(e)}"}
 
-    # 3. Tech Stack
+    # 2. Tech Stack
     try:
         tech_stack = builtwith.parse(target_url)
     except:
         tech_stack = {}
 
-    # 4. Whois
+    # 3. Whois
     try:
         w = whois.whois(domain)
         whois_data = {
-            "registrar": w.registrar,
-            "org": w.org,
+            "registrar": str(w.registrar) if w.registrar else "Unknown",
+            "org": str(w.org) if w.org else "Redacted",
             "creation_date": str(w.creation_date[0]) if isinstance(w.creation_date, list) else str(w.creation_date),
-            "country": w.country
+            "country": str(w.country) if w.country else "Unknown"
         }
     except:
         whois_data = {"error": "Hidden"}
 
-    # 5. DNS
+    # 4. DNS
     dns_data = get_dns_records(domain)
 
     return {
@@ -134,7 +152,7 @@ def analyze_logic(url: str):
         },
         "dns": dns_data,
         "whois": whois_data,
-        "socials": socials[:5] # limit to 5
+        "socials": list(set(socials))[:5]
     }
 
 # --- Frontend ---
@@ -155,6 +173,11 @@ html_content = """
         .tab-btn { color: #94a3b8; }
         .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f1117; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
 <body class="min-h-screen" x-data="app()">
@@ -166,9 +189,6 @@ html_content = """
                 <div class="flex items-center">
                     <i class="fas fa-search-location text-blue-500 text-2xl mr-3"></i>
                     <span class="font-bold text-xl tracking-tight">Deep Inspector <span class="text-blue-500 text-sm align-top">PRO</span></span>
-                </div>
-                <div class="text-sm text-gray-400">
-                    <a href="#" class="hover:text-white transition">About</a>
                 </div>
             </div>
         </div>
@@ -183,7 +203,7 @@ html_content = """
                 Analyze Any Website
             </h1>
             <p class="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-                Get a complete 360° report: Tech Stack, Security Headers, DNS Records, and SEO Performance.
+                Full diagnostic report: Tech Stack, Security Headers, DNS Records, and SEO.
             </p>
             
             <div class="max-w-2xl mx-auto relative">
@@ -191,12 +211,12 @@ html_content = """
                     <i class="fas fa-globe text-gray-500 ml-4"></i>
                     <input type="text" x-model="url" @keydown.enter="analyze()" placeholder="enter domain (e.g., apple.com)" 
                            class="w-full bg-transparent border-none text-white px-4 py-3 focus:outline-none text-lg placeholder-gray-600">
-                    <button @click="analyze()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center">
+                    <button @click="analyze()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center" :disabled="loading">
                         <span x-show="!loading">Analyze</span>
                         <div x-show="loading" class="loader"></div>
                     </button>
                 </div>
-                <p class="text-red-400 text-sm mt-3" x-text="error" x-show="error"></p>
+                <p class="text-red-400 text-sm mt-3 font-semibold" x-text="error" x-show="error"></p>
             </div>
         </div>
 
@@ -237,16 +257,16 @@ html_content = """
                 <!-- Tab Headers -->
                 <div class="flex border-b border-gray-700 bg-gray-900/30">
                     <button @click="tab = 'tech'" :class="{'active': tab === 'tech', 'text-white': tab === 'tech'}" class="flex-1 py-4 text-sm font-medium hover:bg-gray-800 transition tab-btn">
-                        <i class="fas fa-layer-group mb-1 block"></i> Tech Stack
+                        <i class="fas fa-layer-group mb-1 block"></i> Tech
                     </button>
                     <button @click="tab = 'security'" :class="{'active': tab === 'security', 'text-white': tab === 'security'}" class="flex-1 py-4 text-sm font-medium hover:bg-gray-800 transition tab-btn">
                         <i class="fas fa-shield-alt mb-1 block"></i> Security
                     </button>
                     <button @click="tab = 'seo'" :class="{'active': tab === 'seo', 'text-white': tab === 'seo'}" class="flex-1 py-4 text-sm font-medium hover:bg-gray-800 transition tab-btn">
-                        <i class="fas fa-search mb-1 block"></i> SEO & Content
+                        <i class="fas fa-search mb-1 block"></i> SEO
                     </button>
                     <button @click="tab = 'dns'" :class="{'active': tab === 'dns', 'text-white': tab === 'dns'}" class="flex-1 py-4 text-sm font-medium hover:bg-gray-800 transition tab-btn">
-                        <i class="fas fa-network-wired mb-1 block"></i> DNS & Whois
+                        <i class="fas fa-network-wired mb-1 block"></i> DNS
                     </button>
                 </div>
 
@@ -269,7 +289,7 @@ html_content = """
                             </template>
                         </div>
                         <div x-show="Object.keys(results?.tech || {}).length === 0" class="text-center text-gray-500 py-10">
-                            No specific technologies detected or site is hidden behind a proxy.
+                            No specific technologies detected or site is hidden.
                         </div>
                     </div>
 
@@ -441,25 +461,15 @@ class URLRequest(BaseModel):
     url: str
 
 @app.get("/", response_class=HTMLResponse)
-async def home():
+def home():
     return html_content
 
+# NOTE: Removed 'async' from here to prevent blocking in FastAPI
 @app.post("/analyze")
-async def analyze_route(req: URLRequest):
+def analyze_route(req: URLRequest):
     return analyze_logic(req.url)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
-
-How to Update Your Live Site
- * Open your local folder where you have the code.
- * Update requirements.txt with the new list above.
- * Update main.py with the new code above.
- * Run these git commands to push the changes:
-   git add .
-git commit -m "Major upgrade to V2"
-git push origin main
-
-
 
 
