@@ -2,5 +2,7 @@ fastapi
 uvicorn
 builtwith
 python-whois
-pydantic
 requests
+beautifulsoup4
+dnspython
+pydantic
