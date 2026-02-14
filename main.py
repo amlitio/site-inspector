@@ -518,10 +518,6 @@ html_content = """
     </script>
 </body>
 </html>
-"""
-
-class URLRequest(BaseModel):
-    url: str
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -533,15 +529,5 @@ def analyze_route(req: URLRequest):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
-
-Step 3: Deploy to Render
- * Save the code above to main.py.
- * Save the requirements list to requirements.txt.
- * Run the git commands:
-   git add .
-git commit -m "Launch MVP with Eco, Links, and Bot detection"
-git push origin main
-
-
 
 
