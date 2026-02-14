@@ -193,7 +193,7 @@ def analyze_logic(url: str):
         "whois": whois_data,
         "socials": list(set(socials))[:5]
     }
-
+# --- CONTINUED IN PART 2 ---
 # --- 2. Frontend (HTML/JS) ---
 
 html_content = """
