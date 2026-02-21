@@ -1,4 +1,4 @@
-mport builtwith
+import builtwith
 import whois
 import socket
 import requests
