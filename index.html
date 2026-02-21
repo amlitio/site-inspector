@@ -9,85 +9,179 @@
     <script src="https://unpkg.com/force-graph"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.12.0/cdn.min.js" defer></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
-        
-        :root {
-            --bg: #000000;
-            --surface: #0A0A0A;
-            --accent: #6366f1;
-            --border: #1A1A1A;
+
+        :root{
+            /* Core palette */
+            --bg0: #05060a;
+            --bg1: #070a12;
+            --surface: rgba(14, 18, 30, 0.72);
+            --surface-2: rgba(10, 12, 18, 0.75);
+            --border: rgba(255,255,255,0.08);
+            --border-2: rgba(255,255,255,0.12);
+
+            /* Accents */
+            --accent: #7c3aed;     /* violet */
+            --accent-2: #22d3ee;   /* cyan */
+            --good: #34d399;
+            --warn: #fbbf24;
+            --bad: #fb7185;
+
+            /* Text */
+            --text: rgba(243,244,246,0.96);
+            --muted: rgba(243,244,246,0.65);
+
+            /* Shadows */
+            --shadow-sm: 0 1px 0 rgba(255,255,255,0.03), 0 12px 24px rgba(0,0,0,0.35);
+            --shadow-md: 0 1px 0 rgba(255,255,255,0.05), 0 18px 40px rgba(0,0,0,0.50);
+            --shadow-lg: 0 1px 0 rgba(255,255,255,0.06), 0 28px 70px rgba(0,0,0,0.65);
+
+            /* Glows */
+            --glow: 0 0 0 1px rgba(124,58,237,0.18), 0 0 40px rgba(124,58,237,0.18);
+            --glow-2: 0 0 0 1px rgba(34,211,238,0.16), 0 0 45px rgba(34,211,238,0.14);
         }
 
-        body { 
-            background-color: var(--bg);
-            color: #f3f4f6; 
+        body{
+            background:
+                radial-gradient(1200px 700px at 20% -10%, rgba(124,58,237,0.22), transparent 55%),
+                radial-gradient(1100px 650px at 90% 10%, rgba(34,211,238,0.16), transparent 60%),
+                radial-gradient(900px 500px at 50% 105%, rgba(124,58,237,0.10), transparent 60%),
+                linear-gradient(180deg, var(--bg0), var(--bg1));
+            color: var(--text);
             font-family: 'Plus Jakarta Sans', sans-serif;
             overflow-x: hidden;
         }
 
-        .mono { font-family: 'JetBrains Mono', monospace; }
+        /* Subtle grid */
+        body::before{
+            content:"";
+            position: fixed;
+            inset: 0;
+            pointer-events:none;
+            background:
+                linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+            background-size: 52px 52px;
+            mask-image: radial-gradient(70% 55% at 50% 40%, black 0%, transparent 70%);
+            opacity: 0.20;
+        }
 
-        .glass-card { 
-            background: var(--surface);
+        /* Noise overlay */
+        body::after{
+            content:"";
+            position: fixed;
+            inset: 0;
+            pointer-events:none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+            background-size: 220px 220px;
+            opacity: 0.05;
+            mix-blend-mode: overlay;
+        }
+
+        .mono{ font-family:'JetBrains Mono', monospace; color: rgba(243,244,246,0.86); }
+
+        .glass-card{
+            background: linear-gradient(180deg, rgba(18,22,36,0.70), rgba(10,12,18,0.70));
             border: 1px solid var(--border);
             border-radius: 24px;
-            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+        .glass-card:hover{
+            transform: translateY(-2px);
+            border-color: var(--border-2);
+            box-shadow: var(--shadow-md);
         }
 
-        .glass-card:hover { border-color: #333; }
-
-        .search-wrap {
-            background: #0D0D0D;
-            border: 1px solid #222;
+        .search-wrap{
+            background: linear-gradient(180deg, rgba(10,12,18,0.88), rgba(8,10,14,0.88));
+            border: 1px solid rgba(255,255,255,0.10);
             border-radius: 100px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 14px 30px rgba(0,0,0,0.35);
+            transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease;
+        }
+        .search-wrap:focus-within{
+            border-color: rgba(124,58,237,0.55);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), var(--glow);
+            transform: translateY(-1px);
         }
 
-        .search-wrap:focus-within {
-            border-color: var(--accent);
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.1);
-        }
-
-        .tab-btn {
-            color: #666;
+        .tab-btn{
+            color: rgba(243,244,246,0.55);
             font-size: 11px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            padding: 20px 30px;
+            letter-spacing: 0.12em;
+            padding: 18px 26px;
             border-bottom: 2px solid transparent;
-            transition: all 0.2s;
+            transition: color .14s ease, background .14s ease, border-color .14s ease;
         }
-
-        .tab-btn.active {
-            color: white;
-            border-bottom: 2px solid var(--accent);
+        .tab-btn:hover{
+            color: rgba(243,244,246,0.80);
             background: rgba(255,255,255,0.03);
         }
-
-        .risk-High { border-left: 4px solid #ff4757; background: linear-gradient(90deg, rgba(255,71,87,0.05) 0%, transparent 100%); }
-        .risk-Medium { border-left: 4px solid #ffa502; background: linear-gradient(90deg, rgba(255,165,2,0.05) 0%, transparent 100%); }
-
-        @keyframes pulse-glow {
-            0% { box-shadow: 0 0 5px rgba(99,102,241,0.2); }
-            50% { box-shadow: 0 0 20px rgba(99,102,241,0.5); }
-            100% { box-shadow: 0 0 5px rgba(99,102,241,0.2); }
+        .tab-btn.active{
+            color: rgba(255,255,255,0.95);
+            border-bottom: 2px solid rgba(124,58,237,0.95);
+            background: linear-gradient(90deg, rgba(124,58,237,0.12), rgba(34,211,238,0.06));
         }
-        .active-recon { animation: pulse-glow 2s infinite; }
+
+        .risk-High{
+            border-left: 4px solid var(--bad);
+            background: linear-gradient(90deg, rgba(251,113,133,0.10), transparent 65%);
+        }
+        .risk-Medium{
+            border-left: 4px solid var(--warn);
+            background: linear-gradient(90deg, rgba(251,191,36,0.10), transparent 65%);
+        }
+        .risk-Low{
+            border-left: 4px solid var(--good);
+            background: linear-gradient(90deg, rgba(52,211,153,0.10), transparent 65%);
+        }
+
+        @keyframes pulse-glow{
+            0%   { box-shadow: 0 0 0 1px rgba(124,58,237,0.14), 0 0 22px rgba(124,58,237,0.12); }
+            50%  { box-shadow: 0 0 0 1px rgba(124,58,237,0.22), 0 0 44px rgba(124,58,237,0.18); }
+            100% { box-shadow: 0 0 0 1px rgba(124,58,237,0.14), 0 0 22px rgba(124,58,237,0.12); }
+        }
+        .active-recon{ animation: pulse-glow 2.1s infinite; }
+
+        button:focus, input:focus{ outline: none; }
+
+        /* PP badges */
+        .pp-badge{
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(255,255,255,0.03);
+        }
+        .pp-low{ color: var(--good); border-color: rgba(52,211,153,0.25); background: rgba(52,211,153,0.06); }
+        .pp-med{ color: var(--warn); border-color: rgba(251,191,36,0.25); background: rgba(251,191,36,0.06); }
+        .pp-high{ color: var(--bad); border-color: rgba(251,113,133,0.25); background: rgba(251,113,133,0.06); }
+
+        pre { white-space: pre-wrap; word-break: break-word; }
     </style>
 </head>
+
 <body x-data="app()">
-    
+
     <!-- HUD Dashboard Nav -->
-    <nav class="border-b border-[#1A1A1A] bg-black/80 backdrop-blur-xl sticky top-0 z-50 px-8 py-5 flex justify-between items-center">
+    <nav class="border-b border-white/10 bg-black/50 backdrop-blur-xl sticky top-0 z-50 px-8 py-5 flex justify-between items-center">
         <div class="flex items-center gap-4">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
                 <i class="fas fa-satellite-dish text-white"></i>
             </div>
             <div>
                 <span class="font-black text-lg text-white tracking-tighter uppercase italic">Inspector<span class="text-indigo-500">.X</span></span>
-                <div class="text-[9px] text-gray-500 font-bold tracking-[0.3em] uppercase">Enterprise Recon v2.4</div>
+                <div class="text-[9px] text-gray-400/70 font-bold tracking-[0.3em] uppercase">Enterprise Recon v2.4</div>
             </div>
         </div>
         <div class="flex items-center gap-6">
@@ -98,122 +192,130 @@
         </div>
     </nav>
 
-    <main class="max-w-[1400px] mx-auto px-6 py-16">
-        
+    <main class="max-w-[1400px] mx-auto px-6 py-16 pb-24">
+
         <!-- Hero Input -->
         <div class="max-w-4xl mb-24">
             <h1 class="text-6xl md:text-8xl font-black text-white mb-8 tracking-tighter leading-[0.9]">
                 Execute <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Deep Recon.</span>
             </h1>
-            <p class="text-xl text-gray-400 mb-12 max-w-2xl font-medium">
-                Map attack surfaces, correlate CVE threats, and audit accessibility compliance for any global domain instantly.
+            <p class="text-xl text-gray-300/70 mb-12 max-w-2xl font-medium">
+                Map attack surfaces, correlate threats, and audit accessibility compliance for authorized domains.
             </p>
-            
+
             <div class="flex flex-col sm:flex-row items-center gap-4">
                 <div class="search-wrap flex items-center flex-1 px-8 py-5 w-full">
-                    <i class="fas fa-fingerprint text-indigo-500 text-2xl mr-5"></i>
-                    <input type="text" x-model="url" @keydown.enter="analyze()" placeholder="target-domain.com" 
-                           class="w-full bg-transparent border-none text-white focus:outline-none text-2xl font-bold placeholder-gray-800">
+                    <i class="fas fa-fingerprint text-indigo-400 text-2xl mr-5"></i>
+                    <input type="text" x-model="url" @keydown.enter="analyze()" placeholder="target-domain.com"
+                           class="w-full bg-transparent border-none text-white focus:outline-none text-2xl font-bold placeholder-gray-600/40">
                 </div>
-                <button @click="analyze()" class="bg-white text-black px-12 py-6 rounded-full font-black text-xl transition-all hover:scale-105 active:scale-95 flex items-center gap-4 shadow-2xl" :disabled="loading">
+                <button @click="analyze()"
+                        class="bg-white text-black px-12 py-6 rounded-full font-black text-xl transition-all hover:scale-105 active:scale-95 flex items-center gap-4 shadow-2xl"
+                        :disabled="loading">
                     <span x-show="!loading">Execute Scan</span>
-                    <div x-show="loading" class="w-6 h-6 border-3 border-black/20 border-t-black rounded-full animate-spin"></div>
+                    <div x-show="loading" class="w-6 h-6 border-4 border-black/20 border-t-black rounded-full animate-spin"></div>
                     <i x-show="!loading" class="fas fa-crosshairs"></i>
                 </button>
             </div>
-            <p x-show="error" class="text-red-500 mt-6 text-sm font-bold flex items-center gap-2"><i class="fas fa-warning"></i> <span x-text="error"></span></p>
+            <p x-show="error" class="text-red-400 mt-6 text-sm font-bold flex items-center gap-2">
+                <i class="fas fa-warning"></i> <span x-text="error"></span>
+            </p>
         </div>
-        
+
         <!-- Intelligence Results -->
         <div x-show="results" x-transition.duration.500ms class="space-y-8">
-            
+
             <!-- Global Status Bar -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div class="glass-card p-8 active-recon">
-                    <div class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-4">Security Index</div>
+                    <div class="text-gray-400/70 text-[10px] font-black uppercase tracking-widest mb-4">Security Index</div>
                     <div class="flex items-baseline gap-2">
                         <div class="text-5xl font-black text-white" x-text="results?.metadata?.posture_score"></div>
-                        <div class="text-xs font-bold text-indigo-500">PT/100</div>
+                        <div class="text-xs font-bold text-indigo-400">PT/100</div>
                     </div>
                 </div>
                 <div class="glass-card p-8">
-                    <div class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-4">CVE Correlation</div>
+                    <div class="text-gray-400/70 text-[10px] font-black uppercase tracking-widest mb-4">CVE Correlation</div>
                     <div class="flex items-baseline gap-2">
-                        <div class="text-5xl font-black text-white" x-text="results?.security?.cves.length"></div>
-                        <div class="text-xs font-bold text-red-500">THREATS</div>
+                        <div class="text-5xl font-black text-white" x-text="results?.security?.cves?.length ?? 0"></div>
+                        <div class="text-xs font-bold text-rose-400">THREATS</div>
                     </div>
                 </div>
                 <div class="glass-card p-8">
-                    <div class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-4">Network TTL</div>
+                    <div class="text-gray-400/70 text-[10px] font-black uppercase tracking-widest mb-4">Network TTL</div>
                     <div class="flex items-baseline gap-2">
                         <div class="text-5xl font-black text-white" x-text="results?.overview?.ttfb"></div>
-                        <div class="text-xs font-bold text-yellow-500">MS</div>
+                        <div class="text-xs font-bold text-amber-300">MS</div>
                     </div>
                 </div>
                 <div class="glass-card p-8">
-                    <div class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-4">Page Weight</div>
+                    <div class="text-gray-400/70 text-[10px] font-black uppercase tracking-widest mb-4">Page Weight</div>
                     <div class="flex items-baseline gap-2">
                         <div class="text-5xl font-black text-white" x-text="results?.overview?.size_kb"></div>
-                        <div class="text-xs font-bold text-blue-500">KB</div>
+                        <div class="text-xs font-bold text-sky-300">KB</div>
                     </div>
                 </div>
             </div>
 
             <!-- Dashboard Interaction -->
             <div class="glass-card overflow-hidden min-h-[700px]">
-                <div class="flex border-b border-[#1A1A1A] bg-[#050505] overflow-x-auto">
+                <div class="flex border-b border-white/10 bg-black/30 overflow-x-auto">
                     <button @click="tab='surface'" :class="tab==='surface'?'active':''" class="tab-btn">Attack Surface</button>
                     <button @click="tab='threats'" :class="tab==='threats'?'active':''" class="tab-btn">Threat Intel</button>
                     <button @click="tab='a11y'" :class="tab==='a11y'?'active':''" class="tab-btn">Accessibility Audit</button>
                     <button @click="tab='fingerprints'" :class="tab==='fingerprints'?'active':''" class="tab-btn">Fingerprints</button>
                     <button @click="tab='ops'" :class="tab==='ops'?'active':''" class="tab-btn">DNS Ops</button>
+                    <button @click="tab='pp'" :class="tab==='pp'?'active':''" class="tab-btn">PP Forensics</button>
                 </div>
-                
+
                 <div class="p-12">
+
                     <!-- ATTACK SURFACE RECON -->
                     <div x-show="tab==='surface'" class="h-[600px] flex flex-col">
                         <div class="flex justify-between items-center mb-8">
                             <h3 class="text-2xl font-black text-white">Public Infrastructure Graph</h3>
-                            <div class="flex gap-6 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                            <div class="flex gap-6 text-[10px] font-black text-gray-400/70 uppercase tracking-widest">
                                 <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#6366f1]"></div> Root Node</span>
                                 <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#818cf8]"></div> Subdomain</span>
                                 <span class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#a855f7]"></div> Integration</span>
                             </div>
                         </div>
-                        <div id="reconGraph" class="flex-1 bg-black rounded-3xl border border-gray-900 overflow-hidden"></div>
+                        <div id="reconGraph" class="flex-1 bg-black/40 rounded-3xl border border-white/10 overflow-hidden"></div>
                     </div>
 
                     <!-- THREAT INTEL -->
                     <div x-show="tab==='threats'" class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                         <div class="space-y-6">
-                            <h3 class="text-xs font-black text-gray-500 uppercase tracking-[0.2em] mb-8">Detected CVE Correlation</h3>
-                            <template x-for="cve in results?.security?.cves">
-                                <div class="p-6 rounded-2xl bg-red-500/5 border border-red-500/10 group hover:border-red-500/40 transition-all">
+                            <h3 class="text-xs font-black text-gray-400/70 uppercase tracking-[0.2em] mb-8">Detected CVE Correlation</h3>
+                            <template x-for="cve in results?.security?.cves" :key="cve.id">
+                                <div class="p-6 rounded-2xl bg-rose-500/5 border border-rose-500/10 group hover:border-rose-500/40 transition-all">
                                     <div class="flex justify-between items-start mb-4">
                                         <div>
-                                            <div class="mono text-red-500 text-xs font-bold" x-text="cve.id"></div>
+                                            <div class="mono text-rose-300 text-xs font-bold" x-text="cve.id"></div>
                                             <div class="text-xl font-black text-white mt-1" x-text="cve.tech"></div>
                                         </div>
                                         <div class="text-right">
-                                            <div class="text-3xl font-black text-red-500" x-text="cve.score"></div>
-                                            <div class="text-[9px] font-black uppercase text-red-400 bg-red-500/20 px-2 py-1 rounded mt-1" x-text="cve.severity"></div>
+                                            <div class="text-3xl font-black text-rose-300" x-text="cve.score"></div>
+                                            <div class="text-[9px] font-black uppercase text-rose-200 bg-rose-500/20 px-2 py-1 rounded mt-1" x-text="cve.severity"></div>
                                         </div>
                                     </div>
-                                    <p class="text-sm text-gray-500 leading-relaxed" x-text="cve.desc"></p>
+                                    <p class="text-sm text-gray-300/70 leading-relaxed" x-text="cve.desc"></p>
                                 </div>
                             </template>
                         </div>
                         <div class="space-y-12">
                             <div class="bg-indigo-500/5 border border-indigo-500/10 p-8 rounded-3xl">
-                                <h3 class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-6">Security Posture Intelligence</h3>
+                                <h3 class="text-xs font-black text-indigo-300 uppercase tracking-widest mb-6">Security Posture Intelligence</h3>
                                 <div class="space-y-4">
-                                    <template x-for="vuln in results?.security?.vulns">
-                                        <div class="p-4 rounded-xl border border-gray-900 bg-black flex justify-between items-center" :class="'risk-'+vuln.risk">
+                                    <template x-for="vuln in results?.security?.vulns" :key="vuln.name">
+                                        <div class="p-4 rounded-xl border border-white/10 bg-black/40 flex justify-between items-center"
+                                             :class="'risk-'+vuln.risk">
                                             <div>
                                                 <div class="text-sm font-bold text-white" x-text="vuln.name"></div>
-                                                <div class="text-[10px] text-gray-500" x-text="vuln.desc"></div>
+                                                <div class="text-[10px] text-gray-300/70" x-text="vuln.desc"></div>
                                             </div>
-                                            <span class="text-[9px] font-black text-gray-400 px-2 py-1 bg-gray-900 rounded" x-text="vuln.risk"></span>
+                                            <span class="text-[9px] font-black text-gray-200/70 px-2 py-1 bg-white/5 border border-white/10 rounded"
+                                                  x-text="vuln.risk"></span>
                                         </div>
                                     </template>
                                 </div>
@@ -224,36 +326,42 @@
                     <!-- A11Y AUDIT -->
                     <div x-show="tab==='a11y'" class="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div class="space-y-8">
-                            <h3 class="text-xs font-black text-gray-500 uppercase tracking-widest">Cognitive & Content Audit</h3>
-                            <div class="p-10 rounded-3xl bg-[#080808] border border-gray-900">
-                                <div class="text-sm text-gray-500 font-bold uppercase mb-2">Reading Complexity</div>
+                            <h3 class="text-xs font-black text-gray-400/70 uppercase tracking-widest">Cognitive & Content Audit</h3>
+                            <div class="p-10 rounded-3xl bg-black/30 border border-white/10">
+                                <div class="text-sm text-gray-300/70 font-bold uppercase mb-2">Reading Complexity</div>
                                 <div class="text-5xl font-black text-white" x-text="results?.accessibility?.cognitive?.reading_complexity"></div>
-                                <div class="mt-10 h-1 w-full bg-gray-900 rounded-full">
+                                <div class="mt-10 h-1 w-full bg-white/10 rounded-full">
                                     <div class="h-full bg-indigo-500" style="width: 70%"></div>
                                 </div>
-                                <div class="text-[10px] text-gray-700 font-bold mt-3 uppercase">OPTIMIZED FOR TARGET AUDIENCE</div>
+                                <div class="text-[10px] text-gray-300/50 font-bold mt-3 uppercase">OPTIMIZED FOR TARGET AUDIENCE</div>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 gap-6">
-                            <div class="p-8 bg-[#080808] border border-gray-900 rounded-3xl flex justify-between items-center">
-                                <div><div class="text-gray-500 text-xs font-bold uppercase mb-1">Missing Alt Tags</div><div class="text-2xl font-black text-white" x-text="results?.accessibility?.images_missing_alt"></div></div>
-                                <i class="fas fa-image text-indigo-500 text-3xl"></i>
+                            <div class="p-8 bg-black/30 border border-white/10 rounded-3xl flex justify-between items-center">
+                                <div>
+                                    <div class="text-gray-300/70 text-xs font-bold uppercase mb-1">Missing Alt Tags</div>
+                                    <div class="text-2xl font-black text-white" x-text="results?.accessibility?.images_missing_alt"></div>
+                                </div>
+                                <i class="fas fa-image text-indigo-400 text-3xl"></i>
                             </div>
-                            <div class="p-8 bg-[#080808] border border-gray-900 rounded-3xl flex justify-between items-center">
-                                <div><div class="text-gray-500 text-xs font-bold uppercase mb-1">Interaction Density</div><div class="text-2xl font-black text-white" x-text="results?.accessibility?.cognitive?.interaction_density"></div></div>
-                                <i class="fas fa-mouse-pointer text-indigo-500 text-3xl"></i>
+                            <div class="p-8 bg-black/30 border border-white/10 rounded-3xl flex justify-between items-center">
+                                <div>
+                                    <div class="text-gray-300/70 text-xs font-bold uppercase mb-1">Interaction Density</div>
+                                    <div class="text-2xl font-black text-white" x-text="results?.accessibility?.cognitive?.interaction_density"></div>
+                                </div>
+                                <i class="fas fa-mouse-pointer text-indigo-400 text-3xl"></i>
                             </div>
                         </div>
                     </div>
 
                     <!-- FINGERPRINTS -->
                     <div x-show="tab==='fingerprints'" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <template x-for="(techs, cat) in results?.tech">
-                            <div class="p-8 rounded-3xl bg-[#080808] border border-gray-900 group hover:border-indigo-500/30">
-                                <div class="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] mb-6" x-text="cat"></div>
+                        <template x-for="(techs, cat) in results?.tech" :key="cat">
+                            <div class="p-8 rounded-3xl bg-black/30 border border-white/10 group hover:border-indigo-500/30 transition-all">
+                                <div class="text-[10px] font-black text-gray-300/60 uppercase tracking-[0.2em] mb-6" x-text="cat"></div>
                                 <div class="flex flex-wrap gap-2">
-                                    <template x-for="t in techs">
-                                        <span class="bg-indigo-500/10 text-indigo-400 px-4 py-2 rounded-full text-xs font-bold border border-indigo-500/20" x-text="t"></span>
+                                    <template x-for="t in techs" :key="t">
+                                        <span class="bg-indigo-500/10 text-indigo-300 px-4 py-2 rounded-full text-xs font-bold border border-indigo-500/20" x-text="t"></span>
                                     </template>
                                 </div>
                             </div>
@@ -265,26 +373,109 @@
                         <div class="glass-card p-10 space-y-8">
                             <h3 class="text-lg font-black text-white">Active DNS Map</h3>
                             <div>
-                                <div class="text-[10px] font-black text-indigo-400 uppercase mb-4 tracking-widest">Mail Exchange (MX)</div>
+                                <div class="text-[10px] font-black text-indigo-300 uppercase mb-4 tracking-widest">Mail Exchange (MX)</div>
                                 <div class="space-y-3">
-                                    <template x-for="mx in results?.dns?.MX">
-                                        <div class="mono text-xs text-gray-400 p-4 bg-black rounded-xl border border-gray-900 truncate" x-text="mx"></div>
+                                    <template x-for="mx in (results?.dns?.MX ?? [])" :key="mx">
+                                        <div class="mono text-xs text-gray-200/70 p-4 bg-black/40 rounded-xl border border-white/10 truncate" x-text="mx"></div>
                                     </template>
+                                    <div x-show="(results?.dns?.MX ?? []).length === 0" class="text-xs text-gray-300/60">
+                                        No MX records reported.
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="glass-card p-10 space-y-8">
                             <h3 class="text-lg font-black text-white">Registry Intelligence</h3>
-                            <div class="flex justify-between items-center pb-6 border-b border-gray-900">
-                                <span class="text-gray-500 font-bold uppercase text-xs">Registrar</span>
+                            <div class="flex justify-between items-center pb-6 border-b border-white/10">
+                                <span class="text-gray-300/60 font-bold uppercase text-xs">Registrar</span>
                                 <span class="text-white font-black" x-text="results?.dns?.registrar"></span>
                             </div>
-                            <div class="flex justify-between items-center pb-6 border-b border-gray-900">
-                                <span class="text-gray-500 font-bold uppercase text-xs">Expirations</span>
-                                <span class="text-red-400 font-black mono" x-text="results?.dns?.expiration"></span>
+                            <div class="flex justify-between items-center pb-6 border-b border-white/10">
+                                <span class="text-gray-300/60 font-bold uppercase text-xs">Expirations</span>
+                                <span class="text-rose-300 font-black mono" x-text="results?.dns?.expiration"></span>
                             </div>
                         </div>
                     </div>
+
+                    <!-- PP FORENSICS -->
+                    <div x-show="tab==='pp'" class="space-y-10">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-2xl font-black text-white">Prototype Pollution Forensics</h3>
+                                <p class="text-sm text-gray-300/60 mt-2 max-w-3xl">
+                                    Heuristic signals only (static). Use for hardening and authorized testing. Runtime instrumentation is required to confirm exploitability.
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <template x-if="ppBadgeClass(results?.prototype_pollution?.confidence)">
+                                    <span class="pp-badge" :class="ppBadgeClass(results?.prototype_pollution?.confidence)">
+                                        <span x-text="results?.prototype_pollution?.confidence ?? 'Unknown'"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="glass-card p-8">
+                                <div class="text-gray-300/60 text-[10px] font-black uppercase tracking-widest mb-4">Sources</div>
+                                <div class="text-5xl font-black text-white" x-text="(results?.prototype_pollution?.counts?.sources ?? 0)"></div>
+                            </div>
+                            <div class="glass-card p-8">
+                                <div class="text-gray-300/60 text-[10px] font-black uppercase tracking-widest mb-4">Gadgets</div>
+                                <div class="text-5xl font-black text-white" x-text="(results?.prototype_pollution?.counts?.gadgets ?? 0)"></div>
+                            </div>
+                            <div class="glass-card p-8">
+                                <div class="text-gray-300/60 text-[10px] font-black uppercase tracking-widest mb-4">Sinks</div>
+                                <div class="text-5xl font-black text-white" x-text="(results?.prototype_pollution?.counts?.sinks ?? 0)"></div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-10">
+                            <div class="flex items-center justify-between mb-6">
+                                <h4 class="text-lg font-black text-white">Evidence Log</h4>
+                                <div class="text-xs text-gray-300/60 mono" x-text="results?.prototype_pollution?.notes"></div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <template x-for="f in (results?.prototype_pollution?.findings ?? [])" :key="`${f.category}-${f.location}-${f.line}-${f.label}`">
+                                    <div class="p-5 rounded-2xl border border-white/10 bg-black/40">
+                                        <div class="flex items-start justify-between gap-6">
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="pp-badge"
+                                                          :class="f.category === 'Source' ? 'pp-med' : (f.category === 'Sink' ? 'pp-high' : 'pp-low')"
+                                                          x-text="f.category"></span>
+                                                    <div class="text-sm font-black text-white truncate" x-text="f.label"></div>
+                                                </div>
+                                                <div class="text-xs text-gray-300/60 mt-2 mono truncate">
+                                                    <span x-text="f.location"></span><span x-show="f.line"> : line <span x-text="f.line"></span></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <pre class="mt-4 text-xs text-gray-200/80 mono leading-relaxed" x-text="f.snippet"></pre>
+                                    </div>
+                                </template>
+
+                                <div x-show="(results?.prototype_pollution?.findings ?? []).length === 0" class="text-sm text-gray-300/60">
+                                    No prototype pollution signals detected in the sampled scripts.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-10">
+                            <h4 class="text-lg font-black text-white mb-4">Hardening Checklist</h4>
+                            <ul class="space-y-3 text-sm text-gray-200/80">
+                                <template x-for="h in (results?.prototype_pollution?.hardening ?? [])" :key="h">
+                                    <li class="flex items-start gap-3">
+                                        <i class="fas fa-shield-halved text-indigo-300 mt-1"></i>
+                                        <span x-text="h"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -293,27 +484,50 @@
     <script>
         function app() {
             return {
-                url: '', loading: false, results: null, error: null, tab: 'surface',
+                url: '',
+                loading: false,
+                results: null,
+                error: null,
+                tab: 'surface',
+
+                ppBadgeClass(confidence) {
+                    const c = (confidence || '').toLowerCase();
+                    if (c === 'high') return 'pp-badge pp-high';
+                    if (c === 'medium') return 'pp-badge pp-med';
+                    if (c === 'low') return 'pp-badge pp-low';
+                    return 'pp-badge';
+                },
+
                 async analyze() {
                     if (!this.url) return;
-                    this.loading = true; this.error = null; this.results = null;
+                    this.loading = true;
+                    this.error = null;
+                    this.results = null;
+
                     try {
                         const res = await fetch('/analyze', {
-                            method: 'POST', 
-                            headers: {'Content-Type': 'application/json'}, 
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({url: this.url})
                         });
                         const data = await res.json();
-                        if (data.error) this.error = data.error;
-                        else { 
-                            this.results = data; 
-                            setTimeout(() => { this.initGraph(data.attack_surface); }, 200); 
+                        if (data.error) {
+                            this.error = data.error;
+                        } else {
+                            this.results = data;
+                            setTimeout(() => { this.initGraph(data.attack_surface); }, 200);
                         }
-                    } catch (e) { this.error = "Target unreachable or intelligence engine offline."; } finally { this.loading = false; }
+                    } catch (e) {
+                        this.error = "Target unreachable or intelligence engine offline.";
+                    } finally {
+                        this.loading = false;
+                    }
                 },
+
                 initGraph(data) {
                     const el = document.getElementById('reconGraph');
-                    if (!el) return;
+                    if (!el || !data) return;
+
                     const Graph = ForceGraph()(el)
                         .graphData(data)
                         .nodeId('id')
@@ -326,8 +540,12 @@
                             const textWidth = ctx.measureText(label).width;
                             const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
 
-                            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                            ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                            ctx.fillRect(
+                                node.x - bckgDimensions[0] / 2,
+                                node.y - bckgDimensions[1] / 2,
+                                ...bckgDimensions
+                            );
 
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'middle';
@@ -338,10 +556,14 @@
                         .nodePointerAreaPaint((node, color, ctx) => {
                             ctx.fillStyle = color;
                             const bckgDimensions = node.__bckgDimensions;
-                            bckgDimensions && ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+                            bckgDimensions && ctx.fillRect(
+                                node.x - bckgDimensions[0] / 2,
+                                node.y - bckgDimensions[1] / 2,
+                                ...bckgDimensions
+                            );
                         })
-                        .linkColor(() => '#1A1A1A')
-                        .backgroundColor('#000000');
+                        .linkColor(() => 'rgba(255,255,255,0.10)')
+                        .backgroundColor('rgba(0,0,0,0)');
                 }
             }
         }
