@@ -3,195 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Inspector</title>
+    <title>Deep Inspector | Premium Site Audit</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.12.0/cdn.min.js" defer></script>
     <style>
-        body { background-color: #0B0E14; color: #cbd5e1; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .glass-panel { background: #151b26; border: 1px solid #1e293b; }
-        .tab-btn.active { border-bottom: 2px solid #3b82f6; color: white; background: rgba(59, 130, 246, 0.1); }
-        .tab-btn { color: #64748b; }
-        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { 
+            background-color: #000000;
+            color: #e5e7eb; 
+            font-family: 'Inter', sans-serif; 
+        }
+        .glass-panel { 
+            background: #111111; 
+            border: 1px solid #222222; 
+            border-radius: 16px;
+        }
+        .search-container {
+            background: #111111;
+            border: 1px solid #333333;
+            border-radius: 9999px;
+            transition: border-color 0.3s ease;
+        }
+        .search-container:focus-within { border-color: #6366f1; }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 9999px;
+            color: white;
+            font-weight: 600;
+        }
+        .tab-btn { color: #6b7280; font-weight: 500; }
+        .tab-btn.active { color: #ffffff; border-bottom: 2px solid #7c3aed; }
+        .loader { border: 2px solid rgba(255,255,255,0.1); border-top: 2px solid #ffffff; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Grades */
-        .grade-A, .grade-Ap { color: #22c55e; border-color: #22c55e; }
-        .grade-B, .grade-C { color: #eab308; border-color: #eab308; }
-        .grade-D, .grade-E, .grade-F { color: #ef4444; border-color: #ef4444; }
-        /* Risks */
-        .risk-High { border-left: 3px solid #ef4444; background: rgba(239, 68, 68, 0.1); }
-        .risk-Medium { border-left: 3px solid #f59e0b; background: rgba(245, 158, 11, 0.1); }
-        .risk-Low { border-left: 3px solid #3b82f6; background: rgba(59, 130, 246, 0.1); }
-        /* Progress Bars */
-        .progress-bg { background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; }
-        .progress-fill { height: 100%; border-radius: 3px; transition: width 1s ease-in-out; }
+        .risk-High { border-left: 3px solid #ef4444; background: rgba(239, 68, 68, 0.05); }
+        .risk-Medium { border-left: 3px solid #f59e0b; background: rgba(245, 158, 11, 0.05); }
     </style>
 </head>
 <body class="min-h-screen" x-data="app()">
-    <nav class="border-b border-gray-800 bg-[#0B0E14] sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-bolt text-white text-sm"></i>
-                    </div>
-                    <span class="font-bold text-xl tracking-tight text-white">Deep Inspector</span>
-                </div>
+    <nav class="border-b border-[#222222] bg-black sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center">
+                <i class="fas fa-layer-group text-white text-sm"></i>
             </div>
+            <span class="font-bold text-lg text-white tracking-tight">Inspector</span>
         </div>
     </nav>
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div class="max-w-3xl mx-auto text-center mb-12">
-            <h1 class="text-4xl font-bold text-white mb-4">Analyze any website instantly.</h1>
-            <p class="text-gray-400 mb-8">Full audit: Tech Stack, Security, Accessibility, and Performance.</p>
-            <div class="relative group">
-                <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                <div class="relative glass rounded-xl p-2 flex items-center shadow-2xl">
-                    <i class="fas fa-search text-gray-500 ml-4"></i>
-                    <input type="text" x-model="url" @keydown.enter="analyze()" placeholder="example.com" class="w-full bg-transparent border-none text-white px-4 py-3 focus:outline-none text-lg placeholder-gray-600">
-                    <button @click="analyze()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2" :disabled="loading">
-                        <span x-show="!loading">Run Audit</span>
-                        <div x-show="loading" class="loader"></div>
-                    </button>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="max-w-3xl mb-16">
+            <h1 class="text-5xl sm:text-6xl font-extrabold text-white mb-6 leading-tight tracking-tight">
+                The ultimate site <br>analysis engine.
+            </h1>
+            <p class="text-xl text-gray-400 mb-10 leading-relaxed">
+                Scan security, performance, and accessibility with visual data breakdowns.
+            </p>
+            <div class="flex items-center max-w-xl gap-3">
+                <div class="search-container flex items-center flex-1 px-4 py-2">
+                    <i class="fas fa-globe text-gray-500 ml-2"></i>
+                    <input type="text" x-model="url" @keydown.enter="analyze()" placeholder="Enter domain (e.g. apple.com)" 
+                           class="w-full bg-transparent border-none text-white px-4 py-2 focus:outline-none text-lg placeholder-gray-600">
                 </div>
+                <button @click="analyze()" class="btn-primary px-8 py-4 flex items-center gap-2 transition hover:opacity-90 shadow-lg shadow-indigo-500/20" :disabled="loading">
+                    <span x-show="!loading">Analyze <i class="fas fa-arrow-right ml-1 text-sm"></i></span>
+                    <div x-show="loading" class="loader"></div>
+                </button>
             </div>
             <p class="text-red-400 text-sm mt-4 font-medium" x-text="error" x-show="error"></p>
         </div>
         
-        <div x-show="results" x-transition.opacity.duration.500ms class="space-y-6">
-            <!-- Stats Grid -->
+        <div x-show="results" x-transition.opacity class="space-y-6 pb-20">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-panel p-5 rounded-xl border-t-2" :class="results?.eco?.grade.includes('A')?'grade-Ap':'grade-'+results?.eco?.grade">
-                    <div class="flex justify-between items-start mb-2"><div class="text-gray-400 text-xs font-bold uppercase">Eco Grade</div><i class="fas fa-leaf" :class="results?.eco?.grade.includes('A')?'grade-Ap':'grade-'+results?.eco?.grade"></i></div>
-                    <div class="text-3xl font-bold text-white" x-text="results?.eco?.grade"></div>
-                    <div class="text-xs text-gray-500 mt-1"><span x-text="results?.eco?.co2_grams"></span>g CO2/view</div>
+                <div class="glass-panel p-6">
+                    <div class="text-gray-500 text-xs font-bold uppercase mb-2 tracking-widest">Eco Grade</div>
+                    <div class="text-4xl font-bold text-white mb-1" x-text="results?.eco?.grade"></div>
+                    <div class="text-sm text-gray-500"><span x-text="results?.eco?.co2_grams"></span>g CO2/view</div>
                 </div>
-                <div class="glass-panel p-5 rounded-xl border-t-2 border-blue-500">
-                    <div class="flex justify-between items-start mb-2"><div class="text-gray-400 text-xs font-bold uppercase">Resources</div><i class="fas fa-tachometer-alt text-blue-500"></i></div>
-                    <div class="text-3xl font-bold text-white" x-text="results?.speed?.request_count"></div>
-                    <div class="text-xs text-gray-500 mt-1">Total Requests</div>
+                <div class="glass-panel p-6">
+                    <div class="text-gray-500 text-xs font-bold uppercase mb-2 tracking-widest">Speed</div>
+                    <div class="text-4xl font-bold text-white mb-1" x-text="results?.overview?.ttfb"></div>
+                    <div class="text-sm text-gray-500">ms TTFB</div>
                 </div>
-                <div class="glass-panel p-5 rounded-xl border-t-2 border-purple-500">
-                    <div class="flex justify-between items-start mb-2"><div class="text-gray-400 text-xs font-bold uppercase">Security</div><i class="fas fa-shield-alt text-purple-500"></i></div>
-                    <div class="text-3xl font-bold text-white"><span x-text="results?.security?.score"></span><span class="text-lg text-gray-500">/100</span></div>
-                    <div class="text-xs text-gray-500 mt-1"><span x-text="results?.security?.vulns.length"></span> Issues Found</div>
+                <div class="glass-panel p-6">
+                    <div class="text-gray-500 text-xs font-bold uppercase mb-2 tracking-widest">Security</div>
+                    <div class="text-4xl font-bold text-white mb-1" x-text="results?.security?.score"></div>
+                    <div class="text-sm text-gray-500">/100 Points</div>
                 </div>
-                <div class="glass-panel p-5 rounded-xl border-t-2 border-pink-500">
-                    <div class="flex justify-between items-start mb-2"><div class="text-gray-400 text-xs font-bold uppercase">Accessibility</div><i class="fas fa-universal-access text-pink-500"></i></div>
-                    <div class="text-3xl font-bold text-white"><span x-text="results?.a11y?.score"></span><span class="text-lg text-gray-500">/100</span></div>
-                    <div class="text-xs text-gray-500 mt-1">Basic Audit</div>
+                <div class="glass-panel p-6">
+                    <div class="text-gray-500 text-xs font-bold uppercase mb-2 tracking-widest">A11Y</div>
+                    <div class="text-4xl font-bold text-white mb-1" x-text="results?.a11y?.score"></div>
+                    <div class="text-sm text-gray-500">Accessibility</div>
                 </div>
             </div>
 
-            <!-- Tabs -->
-            <div class="glass-panel rounded-xl overflow-hidden min-h-[600px]">
-                <div class="flex border-b border-gray-800 overflow-x-auto">
-                    <button @click="tab='tech'" :class="{'active':tab==='tech'}" class="flex-1 py-4 px-4 text-sm font-medium hover:bg-gray-800 transition tab-btn whitespace-nowrap">Tech Stack</button>
-                    <button @click="tab='security'" :class="{'active':tab==='security'}" class="flex-1 py-4 px-4 text-sm font-medium hover:bg-gray-800 transition tab-btn whitespace-nowrap">Security</button>
-                    <button @click="tab='a11y'" :class="{'active':tab==='a11y'}" class="flex-1 py-4 px-4 text-sm font-medium hover:bg-gray-800 transition tab-btn whitespace-nowrap">Accessibility</button>
-                    <button @click="tab='performance'" :class="{'active':tab==='performance'}" class="flex-1 py-4 px-4 text-sm font-medium hover:bg-gray-800 transition tab-btn whitespace-nowrap">Speed</button>
-                    <button @click="tab='seo'" :class="{'active':tab==='seo'}" class="flex-1 py-4 px-4 text-sm font-medium hover:bg-gray-800 transition tab-btn whitespace-nowrap">SEO</button>
+            <div class="glass-panel overflow-hidden mt-8">
+                <div class="flex border-b border-[#222222] overflow-x-auto bg-[#0a0a0a]">
+                    <button @click="tab='analytics'" :class="{'active':tab==='analytics'}" class="py-5 px-8 text-sm tab-btn whitespace-nowrap">Analytics</button>
+                    <button @click="tab='security'" :class="{'active':tab==='security'}" class="py-5 px-8 text-sm tab-btn whitespace-nowrap">Security</button>
+                    <button @click="tab='tech'" :class="{'active':tab==='tech'}" class="py-5 px-8 text-sm tab-btn whitespace-nowrap">Tech Stack</button>
+                    <button @click="tab='dns'" :class="{'active':tab==='dns'}" class="py-5 px-8 text-sm tab-btn whitespace-nowrap">DNS</button>
                 </div>
                 
-                <div class="p-6 md:p-8">
-                    <!-- TECH TAB -->
-                    <div x-show="tab==='tech'" class="animate-fade-in">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6"><template x-for="(items,category) in results?.tech"><div class="bg-gray-900/50 rounded-lg p-4 border border-gray-800"><div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3" x-text="category"></div><div class="flex flex-wrap gap-2"><template x-for="item in items"><span class="bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded text-sm border border-blue-500/20" x-text="item"></span></template></div></div></template></div>
-                        <div x-show="Object.keys(results?.tech||{}).length===0" class="text-center text-gray-500 py-10">No specific technologies detected.</div>
-                    </div>
-
-                    <!-- SECURITY TAB -->
-                    <div x-show="tab==='security'" class="animate-fade-in">
-                        <div class="mb-8">
-                            <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Vulnerability Scan</h3>
-                            
-                            <!-- Login Detection Alert -->
-                            <div x-show="results?.security?.login_found" class="mb-4 p-4 rounded-lg bg-yellow-900/20 border border-yellow-500/30 flex items-start gap-3">
-                                <i class="fas fa-key text-yellow-500 mt-1"></i>
-                                <div>
-                                    <div class="text-white font-bold text-sm">Login Form Detected</div>
-                                    <div class="text-xs text-gray-400">Ensure this page uses HTTPS and CSRF tokens. <span x-show="!results?.security?.https" class="text-red-400 font-bold block mt-1">WARNING: Page is not HTTPS! Passwords are insecure.</span></div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-3">
-                                <template x-for="vuln in results?.security?.vulns">
-                                    <div class="p-4 rounded-lg flex justify-between items-center" :class="'risk-'+vuln.risk">
-                                        <div><div class="text-sm font-bold text-white mb-1" x-text="vuln.name"></div><div class="text-xs text-gray-400" x-text="vuln.desc"></div></div>
-                                        <span class="px-2 py-1 rounded text-xs font-bold uppercase text-white bg-black/20" x-text="vuln.risk"></span>
-                                    </div>
-                                </template>
-                                <div x-show="results?.security?.vulns.length === 0" class="text-green-400 p-4 bg-green-900/10 rounded-lg border border-green-900/30"><i class="fas fa-check-circle mr-2"></i> No critical issues detected.</div>
-                            </div>
+                <div class="p-8">
+                    <div x-show="tab==='analytics'" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-[#0a0a0a] p-6 rounded-xl border border-[#222222]">
+                            <h3 class="text-sm font-bold text-white mb-6">Resource Distribution</h3>
+                            <div class="relative h-64"><canvas id="resourceChart"></canvas></div>
                         </div>
-                        <div class="overflow-hidden rounded-lg border border-gray-800"><table class="w-full text-left"><tbody class="divide-y divide-gray-800 bg-gray-900/30"><template x-for="(status,header) in results?.security?.headers"><tr><td class="px-6 py-4 font-mono text-sm text-gray-300" x-text="header"></td><td class="px-6 py-4 text-right"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="status==='Present'?'bg-green-500/10 text-green-400':'bg-red-500/10 text-red-400'" x-text="status"></span></td></tr></template></tbody></table></div>
-                    </div>
-
-                    <!-- A11Y TAB (NEW) -->
-                    <div x-show="tab==='a11y'" class="animate-fade-in">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div class="bg-gray-900/50 p-6 rounded-xl border border-gray-800">
-                                <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Content Check</h3>
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">Images found</span><span class="text-white font-mono" x-text="results?.a11y?.images_count"></span></div>
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">Images missing ALT text</span><span class="font-bold font-mono" :class="results?.a11y?.images_missing_alt > 0 ? 'text-red-400' : 'text-green-400'" x-text="results?.a11y?.images_missing_alt"></span></div>
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">HTML Language Tag</span><span class="px-2 py-0.5 rounded text-xs" :class="results?.a11y?.lang_tag ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'" x-text="results?.a11y?.lang_tag || 'Missing'"></span></div>
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">Skip-to-Content link</span><span class="px-2 py-0.5 rounded text-xs" :class="results?.a11y?.skip_link ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'" x-text="results?.a11y?.skip_link ? 'Present' : 'Not Found'"></span></div>
-                                </div>
-                            </div>
-                            <div class="bg-gray-900/50 p-6 rounded-xl border border-gray-800">
-                                <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Structure</h3>
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">Heading Tags (H1-H6)</span><span class="text-white font-mono" x-text="results?.a11y?.headings_count"></span></div>
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">ARIA Roles Used</span><span class="text-white font-mono" x-text="results?.a11y?.aria_count"></span></div>
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">Forms Detected</span><span class="text-white font-mono" x-text="results?.a11y?.forms_count"></span></div>
-                                </div>
-                            </div>
+                        <div class="bg-[#0a0a0a] p-6 rounded-xl border border-[#222222]">
+                            <h3 class="text-sm font-bold text-white mb-6">Link Breakdown</h3>
+                            <div class="relative h-64"><canvas id="linkChart"></canvas></div>
                         </div>
                     </div>
 
-                    <!-- PERFORMANCE TAB (UPDATED) -->
-                    <div x-show="tab==='performance'" class="animate-fade-in">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div class="bg-gray-900/50 p-6 rounded-xl border border-gray-800">
-                                <h3 class="text-sm font-bold text-gray-400 uppercase mb-6">Resource Breakdown</h3>
-                                <div class="space-y-6">
-                                    <div>
-                                        <div class="flex justify-between text-xs mb-2"><span class="text-blue-400">Scripts (JS)</span><span class="text-gray-400" x-text="results?.speed?.js_count + ' files'"></span></div>
-                                        <div class="progress-bg"><div class="progress-fill bg-blue-500" :style="'width: ' + Math.min((results?.speed?.js_count / 20) * 100, 100) + '%'"></div></div>
-                                    </div>
-                                    <div>
-                                        <div class="flex justify-between text-xs mb-2"><span class="text-pink-400">Styles (CSS)</span><span class="text-gray-400" x-text="results?.speed?.css_count + ' files'"></span></div>
-                                        <div class="progress-bg"><div class="progress-fill bg-pink-500" :style="'width: ' + Math.min((results?.speed?.css_count / 10) * 100, 100) + '%'"></div></div>
-                                    </div>
-                                    <div>
-                                        <div class="flex justify-between text-xs mb-2"><span class="text-green-400">Images</span><span class="text-gray-400" x-text="results?.speed?.img_count + ' files'"></span></div>
-                                        <div class="progress-bg"><div class="progress-fill bg-green-500" :style="'width: ' + Math.min((results?.speed?.img_count / 30) * 100, 100) + '%'"></div></div>
-                                    </div>
-                                </div>
+                    <div x-show="tab==='security'" class="space-y-4">
+                        <template x-for="vuln in results?.security?.vulns">
+                            <div class="p-5 rounded-xl border border-[#222222] bg-[#0a0a0a]" :class="'risk-'+vuln.risk">
+                                <div class="text-md font-bold text-white" x-text="vuln.name"></div>
+                                <div class="text-sm text-gray-400" x-text="vuln.desc"></div>
                             </div>
-                            <div class="bg-gray-900/50 p-6 rounded-xl border border-gray-800">
-                                <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Core Metrics</h3>
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">Time to First Byte (TTFB)</span><span class="font-mono text-white" x-text="results?.overview?.ttfb + ' ms'"></span></div>
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">HTML Document Size</span><span class="font-mono text-white" x-text="results?.overview?.size_kb + ' KB'"></span></div>
-                                    <div class="flex justify-between items-center"><span class="text-gray-300">Server Signature</span><span class="font-mono text-blue-300" x-text="results?.overview?.server"></span></div>
-                                </div>
-                            </div>
-                        </div>
+                        </template>
                     </div>
 
-                    <!-- SEO TAB -->
-                    <div x-show="tab==='seo'" class="animate-fade-in space-y-8">
-                        <div class="bg-gray-900/50 p-6 rounded-xl border border-gray-800"><h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Meta Info</h3><div class="space-y-4"><div><div class="text-xs text-gray-500 mb-1">Title</div><div class="text-lg text-white font-medium" x-text="results?.overview?.title"></div></div><div><div class="text-xs text-gray-500 mb-1">Desc</div><div class="text-gray-400" x-text="results?.overview?.description"></div></div></div></div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div class="bg-gray-900/50 p-6 rounded-xl border border-gray-800 flex justify-between items-center"><div><div class="text-white font-bold">Robots.txt</div></div><span class="px-3 py-1 rounded-full text-xs font-bold" :class="results?.bots?.robots?'bg-green-500/10 text-green-400':'bg-red-500/10 text-red-400'" x-text="results?.bots?.robots?'Found':'Missing'"></span></div><div class="bg-gray-900/50 p-6 rounded-xl border border-gray-800 flex justify-between items-center"><div><div class="text-white font-bold">Sitemap.xml</div></div><span class="px-3 py-1 rounded-full text-xs font-bold" :class="results?.bots?.sitemap?'bg-green-500/10 text-green-400':'bg-red-500/10 text-red-400'" x-text="results?.bots?.sitemap?'Found':'Missing'"></span></div></div>
-                        <div x-show="results?.socials?.length>0"><h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Socials</h3><div class="flex flex-wrap gap-3"><template x-for="link in results?.socials"><a :href="link" target="_blank" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition text-gray-300"><i class="fas fa-external-link-alt text-xs"></i><span x-text="new URL(link).hostname"></span></a></template></div></div>
+                    <div x-show="tab==='tech'" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <template x-for="(items, category) in results?.tech">
+                            <div class="bg-[#0a0a0a] p-4 rounded-xl border border-[#222222]">
+                                <div class="text-xs font-bold text-gray-500 uppercase mb-3" x-text="category"></div>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="item in items">
+                                        <span class="bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full text-xs" x-text="item"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
         </div>
     </main>
-    <script>function app(){return{url:'',loading:false,results:null,error:null,tab:'tech',async analyze(){if(!this.url)return;this.loading=true;this.error=null;this.results=null;try{const res=await fetch('/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:this.url})});const data=await res.json();if(data.error)this.error=data.error;else this.results=data}catch(e){this.error="Connection Error"}finally{this.loading=false}}}}</script>
+
+    <script>
+        function app() {
+            return {
+                url: '', loading: false, results: null, error: null, tab: 'analytics',
+                async analyze() {
+                    if (!this.url) return;
+                    this.loading = true; this.error = null; this.results = null;
+                    try {
+                        const res = await fetch('/analyze', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({url: this.url})});
+                        const data = await res.json();
+                        if (data.error) this.error = data.error;
+                        else { this.results = data; setTimeout(() => { this.renderCharts(data); }, 100); }
+                    } catch (e) { this.error = "Connection Error"; } finally { this.loading = false; }
+                },
+                renderCharts(data) {
+                    const ctxRes = document.getElementById('resourceChart').getContext('2d');
+                    if(window.resChart) window.resChart.destroy();
+                    window.resChart = new Chart(ctxRes, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['JS', 'CSS', 'IMG'],
+                            datasets: [{
+                                data: [data.speed.js_count, data.speed.css_count, data.speed.img_count],
+                                backgroundColor: ['#6366f1', '#ec4899', '#14b8a6'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } } }
+                    });
+
+                    const ctxLink = document.getElementById('linkChart').getContext('2d');
+                    if(window.linkChart) window.linkChart.destroy();
+                    window.linkChart = new Chart(ctxLink, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Internal', 'External'],
+                            datasets: [{
+                                data: [data.links.internal, data.links.external],
+                                backgroundColor: ['#4f46e5', '#f59e0b'],
+                                borderRadius: 8
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: '#222222' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } }, plugins: { legend: { display: false } } }
+                    });
+                }
+            }
+        }
+    </script>
 </body>
 </html>
