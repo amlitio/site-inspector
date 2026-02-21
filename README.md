@@ -1,9 +1,4 @@
-
-### Phase 2: Push to GitHub
-1.  Go to **GitHub.com** and create a new repository 
-2.  Open your terminal in the `site-inspector` folder.
-3.  Run these commands to upload your code:
-    ```bash
+blablaclaw
     git init
     git add .
     git commit -m "Initial commit"
